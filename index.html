@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Examen Python · Lecciones 3 y 4</title>
+<meta name="description" content="Examen de Python básico: tipos de datos, variables, conversiones, formateo de cadenas, operaciones y redondeo.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="styles.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232f5d9f'/%3E%3Ctext x='32' y='43' font-family='monospace' font-weight='700' font-size='28' text-anchor='middle' fill='%23f2c230'%3Epy%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+
+<!-- ======================================================
+     Formulario oculto para que Netlify detecte el formulario.
+     NO borrar. Los nombres deben coincidir con los que envía app.js.
+     ====================================================== -->
+<form name="examen-python-l3-l4" data-netlify="true" netlify-honeypot="bot-field" hidden>
+  <input type="hidden" name="form-name" value="examen-python-l3-l4">
+  <input name="bot-field">
+  <input name="alumna"><input name="fecha"><input name="calificacion"><input name="correctas">
+  <input name="resultado"><input name="minutos"><input name="sin_responder">
+  <input name="teoria"><input name="codigo"><input name="practica">
+  <textarea name="incorrectas"></textarea><textarea name="reforzar"></textarea>
+  <textarea name="respuestas"></textarea><textarea name="temas_json"></textarea><textarea name="secciones_json"></textarea>
+</form>
+
+<main class="wrap">
+  <header class="head">
+    <span class="eyebrow" id="lessons"></span>
+    <h1>Examen de <span class="py">Python</span> básico</h1>
+    <div class="meta" id="meta"></div>
+    <p class="intro">Tres partes: teoría, lectura de código y práctica. En la práctica escribe exactamente el código que falta, respetando mayúsculas y minúsculas. Incluye algunas preguntas de <b>repaso</b> del examen anterior. Al terminar verás tu calificación y tus resultados se enviarán a tu profesor.</p>
+  </header>
+
+  <section class="card start" id="start">
+    <div id="resume" class="resume" hidden></div>
+    <label for="student">Tu nombre completo</label>
+    <input type="text" id="student" autocomplete="name" placeholder="Ej. María López">
+    <span class="field-err" id="nameErr" hidden>Escribe tu nombre para empezar.</span>
+    <ul class="rules" id="rules"></ul>
+    <div class="btns"><button class="btn primary" id="startBtn" type="button">Comenzar examen →</button></div>
+  </section>
+
+  <div class="progress" id="progress" hidden>
+    <div class="bar"><i id="barFill"></i></div>
+    <span class="count" id="progTxt">0 / 25</span>
+    <span class="timer" id="timer" title="Tiempo restante">30:00</span>
+  </div>
+
+  <div id="exam" hidden></div>
+
+  <section id="submitBox" class="card" hidden>
+    <div class="warn-box" id="warn" hidden>
+      <b id="warnTxt"></b>
+      <div class="btns">
+        <button class="btn" id="goMissing" type="button">Ir a la primera sin responder</button>
+        <button class="btn" id="forceSubmit" type="button">Entregar de todos modos</button>
+      </div>
+    </div>
+    <div class="btns" style="justify-content:space-between">
+      <span class="muted small">Revisa tus respuestas antes de entregar. Después ya no podrás cambiarlas.</span>
+      <button class="btn primary" id="submit" type="button">Entregar examen ✓</button>
+    </div>
+  </section>
+
+  <section id="results" hidden></section>
+</main>
+
+<div class="toast" id="toast" hidden></div>
+
+<script src="questions.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+EXAMEN DE PYTHON · LECCIONES 3 Y 4 — Cómo publicarlo en Netlify
+
+1. Entra a https://app.netlify.com → "Add new project" → "Deploy manually".
+   (Es un sitio NUEVO, aparte del examen anterior.)
+2. Arrastra la CARPETA completa "examen-python-l3-l4" (descomprimida).
+3. Dentro del proyecto, en el menú izquierdo entra a "Forms" → "Enable form detection".
+4. Ve a "Deploys" y vuelve a arrastrar la carpeta (Netlify detecta el formulario en ese nuevo deploy).
+5. Haz un examen de prueba y revisa en Forms → "examen-python-l3-l4" que llegó.
+
+Archivos:
+- index.html     → el examen (link para las alumnas)
+- profesor.html  → tu panel: sube el CSV de Forms → Download CSV
+- questions.js   → preguntas y configuración
+- app.js / styles.css → lógica y diseño
+
+Configuración en questions.js (bloque CONFIG):
+- timeLimitMin: 30   → minutos (al terminar se entrega solo)
+- passScore: 70      → calificación aprobatoria
+- showReview: true   → false si no quieres que vean las respuestas correctas
+- sheetUrl: ""       → si quieres que TAMBIÉN llegue a tu Google Sheet como el examen
+                       anterior, pega aquí la URL /exec de tu Apps Script.

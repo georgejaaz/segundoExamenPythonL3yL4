@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Panel del profesor · Python L3–L4</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="styles.css">
+<style>
+  .wrap{max-width:1080px}
+  .drop{display:block;border:2px dashed var(--line);border-radius:12px;padding:30px 18px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s}
+  .drop.over{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,transparent)}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .stat b{display:block;font-family:var(--f-display);font-size:2rem;font-weight:800}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .tbar{display:grid;grid-template-columns:minmax(140px,1.3fr) 2fr 52px;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);font-size:.95rem}
+  .tbar:last-child{border-bottom:none}
+  .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .tbl{border-collapse:collapse;width:100%;font-size:.92rem}
+  .tbl th,.tbl td{padding:8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+  .tbl th{font-family:var(--f-mono);font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);cursor:pointer;user-select:none}
+  .tbl tr.stu{cursor:pointer}.tbl tr.stu:hover td{background:color-mix(in srgb,var(--accent) 6%,transparent)}
+  .tbl tr.det td{white-space:normal;background:var(--bg);font-size:.9rem}
+  .heat th.v{writing-mode:vertical-rl;transform:rotate(180deg);height:170px;vertical-align:bottom;text-transform:none;letter-spacing:0;white-space:normal;line-height:1.15;font-family:var(--f-body);font-size:.78rem}
+  .heat td.c{text-align:center;font-weight:700;font-size:.82rem;min-width:46px;border:2px solid var(--paper)}
+  .h-ok{background:var(--ok-bg);color:var(--ok)}.h-warn{background:var(--warn-bg);color:var(--warn)}.h-bad{background:var(--bad-bg);color:var(--bad)}
+  .demo-flag{background:var(--warn-bg);color:var(--warn);font-weight:700;border-radius:10px;padding:8px 12px}
+  .qfail{display:grid;grid-template-columns:44px 1fr 120px;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+  .qfail:last-child{border-bottom:none}
+  .qfail .bar{height:8px}
+  @media (max-width:760px){.stats{grid-template-columns:repeat(2,1fr)}.two{grid-template-columns:1fr}.qfail{grid-template-columns:36px 1fr}.qfail .bar-wrap{grid-column:1/-1}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="head">
+    <span class="eyebrow">Panel del profesor</span>
+    <h1>Resultados · <span class="py">Python</span> L3–L4</h1>
+    <p class="intro">Sube el CSV que descargas de Netlify (Forms → <i>examen-python-l3-l4</i> → Download CSV). El archivo se procesa solo en tu navegador; no se sube a ningún lado.</p>
+  </header>
+
+  <section class="card">
+    <label class="drop" id="drop" for="file">
+      <div style="font-size:2rem">📄</div>
+      <b>Arrastra aquí el CSV o haz clic para elegirlo</b>
+      <div class="small muted">Exportación de envíos de Netlify Forms</div>
+    </label>
+    <input type="file" id="file" accept=".csv,text/csv" hidden>
+    <div class="btns" style="margin-top:12px"><button class="btn" id="demo" type="button">Ver con datos de ejemplo</button><span class="small muted" id="loadMsg"></span></div>
+  </section>
+
+  <div id="out" hidden style="display:flex;flex-direction:column;gap:16px">
+    <div id="demoFlag" class="demo-flag" hidden>Estás viendo DATOS DE EJEMPLO (inventados). Sube tu CSV para ver los reales.</div>
+    <div class="stats" id="stats"></div>
+    <div class="two">
+      <div class="card"><h2>🎯 Temas a reforzar</h2><p class="small muted" style="margin:4px 0 8px">Aciertos del grupo por tema (de menor a mayor).</p><div id="topics"></div></div>
+      <div class="card"><h2>Por sección</h2><div id="sections" style="margin-top:8px"></div>
+        <h3 style="margin-top:16px">Preguntas más falladas</h3><p class="small muted" style="margin:4px 0 6px">% de alumnas que la tuvieron mal.</p><div id="qfails"></div></div>
+    </div>
+    <div class="card"><h2>Alumnas</h2><p class="small muted" style="margin:4px 0 10px">Clic en una fila para ver sus respuestas. Clic en un encabezado para ordenar.</p>
+      <div class="tbl-wrap"><table class="tbl" id="students"></table></div></div>
+    <div class="card"><h2>Mapa de calor: alumna × tema</h2><p class="small muted" style="margin:4px 0 10px">Verde = dominado · Amarillo = casi · Rojo = reforzar.</p>
+      <div class="tbl-wrap"><table class="tbl heat" id="heat"></table></div></div>
+  </div>
+</main>
+
+<script src="questions.js"></script>
+<script>
+(() => {
+"use strict";
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const strip = s => String(s).replace(/<[^>]+>/g, "");
+const SECS = [["teo","Teoría"],["cod","Lectura de código"],["pra","Práctica"]];
+const TOPICS = []; QUESTIONS.forEach(q => { if (!TOPICS.includes(q.topic)) TOPICS.push(q.topic); });
+const cls = r => r >= 0.999 ? "ok" : r >= 0.6 ? "warn" : "bad";
+const color = r => r >= 0.8 ? "var(--ok)" : r >= 0.6 ? "var(--hl)" : "var(--bad)";
+
+function parseCSV(text) {
+  text = text.replace(/^﻿/, "");
+  const rows = []; let row = [], f = "", q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) { if (c === '"') { if (text[i + 1] === '"') { f += '"'; i++; } else q = false; } else f += c; continue; }
+    if (c === '"') q = true; else if (c === ",") { row.push(f); f = ""; }
+    else if (c === "\n") { row.push(f); rows.push(row); row = []; f = ""; } else if (c !== "\r") f += c;
+  }
+  if (f !== "" || row.length) { row.push(f); rows.push(row); }
+  return rows.filter(r => r.some(x => x.trim() !== ""));
+}
+function toStudents(rows) {
+  const head = rows[0].map(h => h.toLowerCase().replace(/[^a-z0-9_]/g, ""));
+  const col = k => head.findIndex(h => h === k || h.endsWith("_" + k));
+  const keys = ["alumna","fecha","calificacion","correctas","resultado","minutos","incorrectas","reforzar","respuestas","temas_json","secciones_json"];
+  const ix = Object.fromEntries(keys.map(k => [k, col(k)]));
+  ix.created = head.findIndex(h => /created/.test(h));
+  if (ix.alumna < 0 || ix.temas_json < 0) throw new Error("El CSV no tiene las columnas esperadas (alumna, temas_json…). ¿Es la exportación del formulario examen-python-l3-l4?");
+  const g = (r, k) => ix[k] >= 0 ? (r[ix[k]] || "") : "";
+  return rows.slice(1).map(r => {
+    let temas = {}, secs = {}; try { temas = JSON.parse(g(r, "temas_json") || "{}"); } catch (e) {} try { secs = JSON.parse(g(r, "secciones_json") || "{}"); } catch (e) {}
+    const inc = g(r, "incorrectas");
+    return { nombre: g(r, "alumna") || "(sin nombre)", fecha: g(r, "fecha") || g(r, "created"), cal: parseFloat(g(r, "calificacion")) || 0,
+      correctas: g(r, "correctas"), resultado: g(r, "resultado"), mins: g(r, "minutos"), reforzar: g(r, "reforzar"), respuestas: g(r, "respuestas"),
+      wrong: inc && inc !== "ninguna" ? inc.split(",").map(x => parseInt(x)).filter(Boolean) : [], temas, secs };
+  }).filter(s => Object.keys(s.temas).length);
+}
+
+let DATA = [], sortKey = "cal", sortDir = -1;
+function render() {
+  const n = DATA.length, avg = n ? Math.round(DATA.reduce((a, s) => a + s.cal, 0) / n) : 0;
+  const pass = DATA.filter(s => s.cal >= CONFIG.passScore).length;
+  $("#stats").innerHTML = `
+    <div class="card stat"><span class="small muted">Alumnas</span><b>${n}</b></div>
+    <div class="card stat"><span class="small muted">Promedio</span><b>${avg}</b></div>
+    <div class="card stat"><span class="small muted">Aprobadas (≥${CONFIG.passScore})</span><b style="color:var(--ok)">${pass}</b></div>
+    <div class="card stat"><span class="small muted">No aprobadas</span><b style="color:var(--bad)">${n - pass}</b></div>`;
+  const agg = {}; DATA.forEach(s => Object.entries(s.temas).forEach(([k, v]) => { agg[k] = agg[k] || [0, 0]; agg[k][0] += +v[0]; agg[k][1] += +v[1]; }));
+  $("#topics").innerHTML = Object.entries(agg).map(([k, v]) => [k, v[0] / v[1]]).sort((a, b) => a[1] - b[1]).map(([k, r]) =>
+    `<div class="tbar"><span>${esc(k)}</span><div class="bar"><i style="width:${Math.round(r * 100)}%;background:${color(r)}"></i></div><b style="text-align:right">${Math.round(r * 100)}%</b></div>`).join("");
+  $("#sections").innerHTML = SECS.map(([id, name]) => { let c = 0, t = 0; DATA.forEach(s => { const v = s.secs[id]; if (v) { c += +v[0]; t += +v[1]; } }); const r = t ? c / t : 0;
+    return `<div class="tbar"><span>${name}</span><div class="bar"><i style="width:${Math.round(r * 100)}%"></i></div><b style="text-align:right">${Math.round(r * 100)}%</b></div>`; }).join("");
+  const fails = QUESTIONS.map(q => [q, DATA.filter(s => s.wrong.includes(q.num)).length / (n || 1)]).filter(x => x[1] > 0).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  $("#qfails").innerHTML = fails.length ? fails.map(([q, r]) => `<div class="qfail"><b class="mono">${String(q.num).padStart(2, "0")}</b>
+    <span class="small">${esc(strip(q.text))}${q.code ? ` <code>${esc(q.code.split("\n").pop().replace(/@@/g, "____"))}</code>` : ""}</span>
+    <div class="bar-wrap"><div class="bar"><i style="width:${Math.round(r * 100)}%;background:var(--bad)"></i></div><span class="small muted">${Math.round(r * 100)}%</span></div></div>`).join("") : '<p class="muted">¡Nadie falló preguntas! 🎉</p>';
+  renderStudents(); renderHeat();
+}
+function renderStudents() {
+  const val = (s, k) => k === "nombre" ? s.nombre.toLowerCase() : k === "cal" ? s.cal : (s.secs[k] ? s.secs[k][0] / s.secs[k][1] : 0);
+  const rows = DATA.slice().sort((a, b) => { const x = val(a, sortKey), y = val(b, sortKey); return (x > y ? 1 : x < y ? -1 : 0) * sortDir; });
+  const ar = k => sortKey === k ? (sortDir > 0 ? " ▲" : " ▼") : "";
+  $("#students").innerHTML = `<thead><tr><th data-k="nombre">Alumna${ar("nombre")}</th><th data-k="cal">Calif.${ar("cal")}</th><th>Resultado</th>
+    ${SECS.map(([id, n]) => `<th data-k="${id}">${n}${ar(id)}</th>`).join("")}<th>Fecha</th><th>Min</th></tr></thead><tbody>${rows.map((s, i) => `
+    <tr class="stu" data-i="${i}"><td><b>${esc(s.nombre)}</b></td><td><b>${s.cal}</b> <span class="small muted">${esc(s.correctas)}</span></td>
+      <td><span class="chip ${s.cal >= CONFIG.passScore ? "ok" : "bad"}">${esc(s.resultado || (s.cal >= CONFIG.passScore ? "Aprobado" : "No aprobado"))}</span></td>
+      ${SECS.map(([id]) => { const v = s.secs[id]; if (!v) return "<td>—</td>"; const r = v[0] / v[1]; return `<td><span class="chip ${cls(r)}">${v[0]}/${v[1]}</span></td>`; }).join("")}
+      <td class="small">${esc(s.fecha)}</td><td class="small">${esc(s.mins)}</td></tr>
+    <tr class="det" data-d="${i}" hidden><td colspan="${5 + SECS.length}">
+      <div><b>Reforzar:</b> ${esc(s.reforzar || "—")}</div>
+      <div style="margin-top:6px"><b>Incorrectas:</b> ${s.wrong.length ? s.wrong.join(", ") : "ninguna"}</div>
+      <ul style="margin:6px 0 0;padding-left:18px">${s.respuestas ? s.respuestas.split(" | ").map(x => `<li class="mono small">${esc(x)}</li>`).join("") : ""}</ul></td></tr>`).join("")}</tbody>`;
+  $("#students").querySelectorAll("th[data-k]").forEach(th => th.onclick = () => { const k = th.dataset.k; if (sortKey === k) sortDir *= -1; else { sortKey = k; sortDir = k === "nombre" ? 1 : -1; } renderStudents(); });
+  $("#students").querySelectorAll("tr.stu").forEach(tr => tr.onclick = () => { const d = $(`#students tr[data-d="${tr.dataset.i}"]`); d.hidden = !d.hidden; });
+}
+function renderHeat() {
+  const rows = DATA.slice().sort((a, b) => a.nombre.localeCompare(b.nombre));
+  $("#heat").innerHTML = `<thead><tr><th>Alumna</th>${TOPICS.map(t => `<th class="v" title="${esc(t)}">${esc(t)}</th>`).join("")}</tr></thead><tbody>${rows.map(s =>
+    `<tr><td><b>${esc(s.nombre)}</b></td>${TOPICS.map(t => { const v = s.temas[t]; return v ? `<td class="c h-${cls(v[0] / v[1])}" title="${esc(t)}: ${v[0]}/${v[1]}">${v[0]}/${v[1]}</td>` : '<td class="c">—</td>'; }).join("")}</tr>`).join("")}</tbody>`;
+}
+function loadText(text, demo) {
+  try {
+    const rows = parseCSV(text); if (rows.length < 2) throw new Error("El archivo no tiene envíos.");
+    DATA = toStudents(rows); if (!DATA.length) throw new Error("No se encontraron resultados válidos en el CSV.");
+    $("#out").hidden = false; $("#demoFlag").hidden = !demo;
+    $("#loadMsg").textContent = demo ? "" : `✓ ${DATA.length} resultado(s) cargados`;
+    render(); $("#out").scrollIntoView({ behavior: "smooth" });
+  } catch (e) { $("#loadMsg").textContent = "⚠️ " + e.message; }
+}
+function readFile(f) { if (!f) return; const r = new FileReader(); r.onload = () => loadText(r.result, false); r.readAsText(f, "utf-8"); }
+$("#file").addEventListener("change", e => readFile(e.target.files[0]));
+const drop = $("#drop");
+["dragenter","dragover"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave","drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", e => readFile(e.dataTransfer.files[0]));
+
+$("#demo").addEventListener("click", () => {
+  const hard = { "Formateo de cadenas": .2, "Operaciones matemáticas": .15, "Proyecto: calculadora de comisiones": .2 };
+  const q2 = s => '"' + String(s).replace(/"/g, '""') + '"';
+  const head = ["alumna","fecha","calificacion","correctas","resultado","minutos","incorrectas","reforzar","respuestas","temas_json","secciones_json"];
+  const lines = [head.join(",")];
+  for (let i = 1; i <= 8; i++) {
+    const skill = .5 + Math.random() * .45, temas = {}, secs = {}, wrong = []; let c = 0;
+    QUESTIONS.forEach(q => { const ok = Math.random() < skill - (hard[q.topic] || 0);
+      temas[q.topic] = temas[q.topic] || [0, 0, q.sec]; temas[q.topic][1]++; secs[q.sec] = secs[q.sec] || [0, 0]; secs[q.sec][1]++;
+      if (ok) { c++; temas[q.topic][0]++; secs[q.sec][0]++; } else wrong.push(q.num); });
+    const cal = Math.round(c * 100 / QUESTIONS.length);
+    const ref = Object.entries(temas).filter(([, v]) => v[0] / v[1] < .6).map(([k]) => k).join("; ");
+    lines.push([`Alumna de ejemplo ${i}`, "30 oct 2026, 10:" + (10 + i), cal, `${c}/${QUESTIONS.length}`, cal >= CONFIG.passScore ? "Aprobado" : "No aprobado",
+      18 + i, wrong.join(", ") || "ninguna", ref || "—", "", JSON.stringify(temas), JSON.stringify(secs)].map(q2).join(","));
+  }
+  loadText(lines.join("\n"), true);
+});
+})();
+</script>
+</body>
+</html>
